@@ -1,19 +1,18 @@
 ---
 name: gameai-openspec-from-doc
-description: 输入一个或多个文档（需求/设计/接口），自动提取→分类分析→融合生成 OpenSpec change（proposal/design/tasks/specs），最后进入 explore 讨论。
+description: 输入一段需求文字，或输入一个或多个需求/设计/接口文档，自动归一化输入→分类分析→融合生成 OpenSpec change（proposal/design/tasks/specs），最后进入 explore 讨论。
 license: MIT
-compatibility: Requires openspec CLI. Requires python3 for docx extraction.
 metadata:
   author: pimingzhen
-  version: "2.0"
+  version: "2.1"
 ---
 
-输入一个或多个文档，自动完成：
+输入一段需求文字，或输入一个或多个文档，自动完成：
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│  需求文档     │    │  设计文档     │    │  接口文档     │
-│  .docx/.md   │    │  .docx/.md   │    │  .docx/.md   │
+│  需求输入     │    │  设计文档     │    │  接口文档     │
+│  文字/文档    │    │  .docx/.md   │    │  .docx/.md   │
 └──────┬───────┘    └──────┬───────┘    └──────┬───────┘
        │                   │                   │
        └───────────────────┼───────────────────┘
@@ -41,14 +40,18 @@ metadata:
 - 一份融合需求分析报告
 - 待确认问题清单
 
+**环境要求：** 使用 OpenSpec CLI；提取 `.docx` 时需要 Python 3。
+
 ---
 
 ## 输入
 
-用户通过 `/opsx:from-doc` 提供文档路径，支持以下格式：
+用户通过 `/opsx:from-doc` 提供需求文字或文档路径，支持以下格式：
 
 | 格式 | 说明 |
 |---|---|
+| `/opsx:from-doc 做一个连续签到活动，连续7天，每天奖励递增` | 直接输入需求文字 |
+| `/opsx:from-doc -r "做一个连续签到活动，连续7天，每天奖励递增"` | 使用 `-r` 输入需求文字 |
 | `/opsx:from-doc <需求.docx>` | 单个需求文档 |
 | `/opsx:from-doc -r <需求.docx> -d <设计.docx>` | 需求 + 设计文档 |
 | `/opsx:from-doc -r <需求.docx> -d <设计.docx> -i <接口.docx>` | 全量三文档 |
@@ -58,24 +61,40 @@ metadata:
 
 | 参数 | 含义 | 影响 |
 |---|---|---|
-| `-r` / `--requirement` | 需求文档 | 输入到 Phase 2 全维度分析 |
+| `-r` / `--requirement` | 需求文字或需求文档 | 输入到 Phase 2 全维度分析 |
 | `-d` / `--design` | 设计文档（技术方案/架构设计） | 融合到 design.md artifact |
 | `-i` / `--interface` | 接口文档（API 协议/数据结构） | 融合到 specs + design.md |
 
-**支持的文件格式：** `.docx`、`.md`、`.txt`
+**支持的文件格式：** `.docx`、`.md`、`.txt`。`-d` / `--design` 和 `-i` / `--interface` 仍只接受文档路径。
 
-如果未提供任何路径，使用 **AskUserQuestion tool** 依次询问：
-1. "请提供需求文档路径（可跳过）"
-2. "请提供设计文档路径（可跳过）"
+如果未提供任何输入，先使用 **AskUserQuestion tool** 询问：
+1. "请粘贴需求文字，或提供需求文档路径"
+2. 获取有效需求后，再按需询问："请提供设计文档路径（可跳过）"
 3. "请提供接口文档路径（可跳过）"
 
-至少需要一个文档（需求文档），否则终止。
+至少需要一段非空需求文字或一个可成功提取的需求文档，否则终止。
 
 ---
 
 ## 执行流程
 
-### Phase 1: 文档提取
+### Phase 1: 输入归一化与文档提取
+
+先将需求输入归一化为 `$req_content`：
+
+1. 获取裸参数或 `-r` / `--requirement` 的完整值，不按空格拆分需求正文。
+2. 如果该值是存在且扩展名受支持的文件，按下方文档规则提取并设置 `$req_content`。
+3. 如果该值像文件路径但文件不存在，提示路径不存在，并让用户选择重新提供路径或明确改为需求文字；不得静默降级。
+4. 其他非空值直接作为 `$req_content`，来源标记为“需求文字”。
+5. 纯空白输入视为未提供需求。
+
+“像文件路径”是指输入包含 `/`、`\\` 等路径分隔符，或以 `.docx`、`.md`、`.txt` 结尾。
+
+需求文字接收成功后显示：
+
+```text
+📝 需求文字: 已接收 <字符数> 字
+```
 
 对每个提供的文档：
 
@@ -113,7 +132,7 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 ```
 
 将每个文档的内容保存为独立变量：
-- `$req_content` — 需求文档内容
+- `$req_content` — 需求文字或需求文档内容
 - `$design_content` — 设计文档内容
 - `$interface_content` — 接口文档内容
 
@@ -121,7 +140,7 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 
 ### Phase 2: 融合需求分析
 
-1. **对需求文档** → 15 维度深度分析（同 gameai_analyze_requirement）
+1. **对需求输入** → 15 维度深度分析（同 gameai_analyze_requirement）
 
 2. **对设计文档** → 提取并整理：
    - 技术架构/系统分层
@@ -154,7 +173,7 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 
 ### Phase 3: 创建 OpenSpec Change
 
-1. **确定 change name**（同 v1，从需求文档标题提取 kebab-case，用户确认）
+1. **确定 change name**（优先从需求标题提取 kebab-case；文字需求没有标题时，从首句或核心功能提取，最后由用户确认）
 
 2. **创建 change 目录**
    ```bash
@@ -170,7 +189,7 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 
    | Artifact | 内容来源 |
    |---|---|
-   | **proposal.md** | 需求文档分析（15维度概括） |
+   | **proposal.md** | 需求输入分析（15维度概括） |
    | **design.md** | 需求分析的技术部分 + **设计文档提取的架构/决策** + 接口文档的数据结构 |
    | **specs/\*.md** | 需求功能点 + **接口文档的 API 定义**（每个接口的 request/response 写入对应 spec） |
    | **tasks.md** | 需求分析任务 + 设计文档的模块拆分 + 接口文档的联调任务 |
@@ -203,7 +222,7 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 ### Phase 4: Explore 讨论
 
 1. 展示融合方案摘要
-2. 逐条"待确认问题"（标注每个问题来自哪个文档）
+2. 逐条"待确认问题"（标注每个问题来自需求文字、需求文档、设计文档或接口文档）
 3. 如果提供了设计文档和接口文档，重点讨论：
    - 设计方案是否有缺口？
    - 接口定义是否完整？
@@ -215,11 +234,15 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 ## 输出示例
 
 ```
-## 📄 Phase 1: 文档提取
+## 📥 Phase 1: 输入归一化与文档提取
 
 📄 需求文档: 签到-新版.docx — 75 段
 📄 设计文档: 签到技术设计.md — 120 行
 📄 接口文档: signin-api.docx — 45 段
+
+直接输入需求文字时，需求输入行改为：
+
+📝 需求文字: 已接收 35 字
 
 ## 🔍 Phase 2: 融合分析
 
@@ -263,7 +286,13 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 
 ## Guardrails
 
-- **至少需要一个需求文档**，设计文档和接口文档可选
+- **至少需要一段非空需求文字或一个需求文档**，设计文档和接口文档可选
+- **文字输入仅用于需求**，设计和接口输入仍必须是受支持的文档路径
+- **纯空白输入无效**，提示用户重新提供需求
+- **疑似文件路径不存在时不得静默转为需求文字**，必须让用户重新提供路径或明确确认按文字处理
+- **需求文件与额外裸文字同时出现时必须确认主需求**，不得静默合并
+- **保留需求文字中的换行和 Markdown 语义**，不要按空格拆分或当作额外参数
+- **超短或语义不完整的文字不得自行补全**，将缺失信息列入待确认问题
 - **Phase 1→4 不可跳过**
 - **跨文档一致性检查**：如果需求、设计、接口之间存在矛盾，必须在"待确认问题"中高亮标记
 - **信息来源标注**：artifact 中融合多文档内容时，不要混淆来源
