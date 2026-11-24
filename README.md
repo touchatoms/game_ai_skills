@@ -187,9 +187,9 @@ Prefab 资源命名：UIActivityWin
 ```text
 game_ai_skills/
 ├── game_ai_openspec_apply/              # OpenSpec 方案与 Unity、Cocos Creator、Cocos2d-lua 的 UI 制作及验收
-├── game_ai_review_version_evidence/     # 固定版本综合审查，覆盖新增与历史问题
+├── game_ai_review_version_evidence/     # 固定版本综合审查，覆盖新增与历史问题  develop_1.0.0 合并到 master 需要执行
 ├── game_ai_review_branch_history/       # 固定分支历史审查，调用名为 game_ai_branch_history_review
-├── game_ai_review_shared/               # 单分支历史审查的共享依赖
+├── game_ai_review_shared/               # 单分支审查 develop_1.0.0_qiandao_xxx 合并到 develop_1.0.0 
 ├── game_ai_h5_project_migration_check/  # H5 项目迁移与审查，调用名为 gameai_h5_project_migration_check
 ├── archived/                            # 9 个归档 Skill
 ├── AGENTS.md                            # 团队路由规则
