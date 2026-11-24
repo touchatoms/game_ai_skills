@@ -9,7 +9,11 @@
 
 当用户要求“把需求转成 OpenSpec”“生成 proposal / design / specs”“从文档生成技术方案”时，优先使用：
 
-- game_ai_function
+- game_ai_openspec_apply
+
+当用户要求“UIApply”“根据设计图制作 Unity、Cocos Creator 或 Cocos2d-lua 界面”“需求方案后继续制作 UI”时，使用：
+
+- game_ai_openspec_apply 的 UIApply 或联合模式
 
 当用户要求“需求分析”“分析活动文档”“拆解需求”时，优先使用：
 

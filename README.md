@@ -1,26 +1,25 @@
 # game-ai-skills
 
-面向游戏研发团队的 AI 工作流集合，覆盖需求转 OpenSpec、Unity UI 制作、版本与分支审查、H5 项目迁移。
+面向游戏研发团队的 AI 工作流集合，覆盖需求转 OpenSpec、Unity、Cocos Creator 和 Cocos2d-lua 界面制作、版本与分支审查、H5 项目迁移。
 
-每个 Skill 以 `SKILL.md` 定义输入、执行步骤、证据要求和交付边界，可按需安装到 AI 编程工具中。当前入口见下表；早期需求分析、测试、配置、引擎专项审查等 Skill 已移入 `archived/`。
+每个 Skill 以 `SKILL.md` 定义输入、执行步骤、证据要求和交付边界，可按需安装到 AI 编程工具中。当前工作树有 4 个主入口、1 个共享依赖包和 9 个归档 Skill。下表使用各入口在 `SKILL.md` 中声明的调用名。
+
+[选择 Skill](#选择-skill) · [安装与调用](#安装与调用) · [调用示例](#调用示例) · [仓库结构](#仓库结构) · [归档 Skill](#归档-skill) · [贡献与维护](#贡献与维护)
 
 ## 选择 Skill
 
-| 任务 | 入口与说明 |
-|---|---|
-| 将需求文字或需求／设计／接口文档转为 OpenSpec change | [game_ai_function](game_ai_function/SKILL.md)：融合分析，生成 proposal、design、specs、tasks，最后进入 explore 讨论 |
-| 根据设计图和资源制作 Unity UI Prefab | [openspec-ui-apply](openspec-ui-apply/SKILL.md)：制作或更新界面，完成结构、运行与视觉核对，交接 OpenSpec 任务 |
-| 审核 OpenSpec 版本的客户端 C# 实现 | [openspec-ai-review](openspec-ai-review/SKILL.md)：对比 C# 差异并核查有效需求；按模式执行内部审核或发布单文件 HTML 到 SVN、飞书 |
-| 综合审查固定版本，兼查新增与历史问题 | [game_ai_review_version_evidence](game_ai_review_version_evidence/SKILL.md)：独立发现、核证，逐项反馈并最终统一交付 |
-| 仅查源分支或 MR 合入目标分支引起的问题 | [game_ai_merge_review](game_ai_merge_review/SKILL.md)：核证源变更与合并交互的因果，历史已有问题不计新增 |
-| 查某个固定分支现存的问题 | [game_ai_branch_history_review](game_ai_branch_history_review/SKILL.md)：单分支审查现存缺陷、历史遗留与需求遗漏，不要求对照基线 |
-| Cocos Creator H5 项目迁移或迁移审查 | [H5 项目迁移](game_ai_h5_project_migration_check/SKILL.md)：覆盖客户端与 `tools_h5`，区分迁移实施和只读审查 |
+| 任务 | Skill 入口 | 适用范围 |
+| --- | --- | --- |
+| 需求转 OpenSpec，或按请求继续制作游戏 UI | [game_ai_openspec_apply](game_ai_openspec_apply/SKILL.md) | 统一需求方案、UI 契约、界面制作与验收；也可直接续做已有变更的 UI |
+| 综合审查固定版本，兼查新增与历史问题 | [game_ai_review_version_evidence](game_ai_review_version_evidence/SKILL.md) | 独立发现、核证，逐项反馈并最终统一交付 |
+| 查某个固定分支现存的问题 | [game_ai_branch_history_review](game_ai_review_branch_history/SKILL.md) | 单分支审查现存缺陷、历史遗留与需求遗漏，不要求对照基线 |
+| Cocos Creator H5 项目迁移或迁移审查 | [gameai_h5_project_migration_check](game_ai_h5_project_migration_check/SKILL.md) | 覆盖客户端与 `tools_h5`，区分迁移实施和只读审查 |
 
-审查入口按目标选择：综合审查用 `game_ai_review_version_evidence`，合并归因用 `game_ai_merge_review`，单分支现状用 `game_ai_branch_history_review`。逐项反馈规则目前仅在综合入口明确配置，不能默认认为拆分入口已同步；三者的对照测试程度也不能视为相同。
+审查带 MR 的固定版本可用 `game_ai_review_version_evidence`，默认同时覆盖新增与仍存在的历史问题，可按请求限定仅新增。只想检查一个固定分支的现状、没有对照基线时，用 `game_ai_branch_history_review`。
 
-`game_ai_review_shared` 是两个拆分审查入口的共享依赖，不是独立 Skill。综合入口包含自己的工具与参考文件，可单独安装。
+`game_ai_review_shared` 提供单分支入口使用的审查流程、证据判定、报告与打包工具。固定版本综合入口自带这些工具，可独立安装。两套流程均可核对本版有效的 OpenSpec 条款及其实现。
 
-## 安装与开始使用
+## 安装与调用
 
 ### 1. 获取仓库
 
@@ -34,44 +33,46 @@ cd game_ai_skills
 ### 2. 选择安装位置
 
 | 工具 | 项目内安装 | 用户级安装 |
-|---|---|---|
+| --- | --- | --- |
 | Codex | `<项目>/.agents/skills/<skill>/` | `~/.agents/skills/<skill>/` |
 | Claude Code | `<项目>/.claude/skills/<skill>/` | `~/.claude/skills/<skill>/` |
 
-以上为通用发现目录，分别见 [Codex 官方说明](https://developers.openai.com/codex/skills/)和 [Claude Code 官方说明](https://code.claude.com/docs/en/skills)。本仓库部分入口另有固定路径要求，见下文。
+以上为通用发现目录，分别见 [Codex 官方说明](https://developers.openai.com/codex/skills/) 和 [Claude Code 官方说明](https://code.claude.com/docs/en/skills)。本仓库部分入口另有固定路径要求，见下文。
 
-例如，在目标游戏项目中安装需求转 OpenSpec 入口（以下命令在本仓库根目录执行，将示例路径换成实际路径）：
+在仓库根目录执行以下命令，将示例路径替换为目标游戏项目路径。
+
+**Codex 项目内安装**
 
 ```bash
 mkdir -p /path/to/game-project/.agents/skills
-cp -R game_ai_function /path/to/game-project/.agents/skills/
+cp -R game_ai_openspec_apply /path/to/game-project/.agents/skills/
 ```
 
-Claude Code 对应示例：
+**Claude Code 项目内安装**
 
 ```bash
 mkdir -p /path/to/game-project/.claude/skills
-cp -R game_ai_function /path/to/game-project/.claude/skills/
+cp -R game_ai_openspec_apply /path/to/game-project/.claude/skills/
 ```
 
 已有同名安装时，先比较本地定制内容和版本，再更新。
 
-### 3. 处理入口的特殊要求
+### 3. 配置入口名称与依赖
 
-- **两个拆分审查入口**：其 `SKILL.md` 明确从 `${CODEX_HOME:-$HOME/.codex}/skills/game_ai_review_shared/WORKFLOW.md` 读取依赖。即使入口放在 `.agents/skills/`，也须把完整的 `game_ai_review_shared` 放到上述位置；不能只放在入口旁边便认为可用。
-- **OpenSpec AI Review**：按该入口约定，仅安装在当前工程 `.codex/skills/openspec-ai-review/`，并使用其本机配置。先确认当前客户端能发现该目录；不要仅套用通用安装示例。配置方式见 [配置与运行](openspec-ai-review/references/configuration.md)。
+- **功能与 UI 统一入口**：完整安装 `game_ai_openspec_apply` 即可使用方案、UIApply 和联合流程。已有安装升级时更新完整目录，检查本地定制。
+- **单分支历史审查**：仓库目录是 `game_ai_review_branch_history`，调用名为 `game_ai_branch_history_review`。其 `SKILL.md` 明确从 `${CODEX_HOME:-$HOME/.codex}/skills/game_ai_review_shared/WORKFLOW.md` 读取依赖。即使入口放在 `.agents/skills/`，也须把完整的 `game_ai_review_shared` 放到上述位置；不能只放在入口旁边便认为可用。
 - **H5 项目迁移**：仓库目录已改为 `game_ai_h5_project_migration_check`，但 `SKILL.md` 的 `name` 及 `agents/openai.yaml` 的提示仍是 `gameai_h5_project_migration_check`。当前调用沿用旧名；安装到发现目录时也使用旧名以保持一致。
 
-拆分审查安装示例：
+**单分支历史审查**（首次安装，目标入口目录尚不存在）
 
 ```bash
 mkdir -p ~/.agents/skills
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-cp -R game_ai_merge_review game_ai_branch_history_review ~/.agents/skills/
+cp -R game_ai_review_branch_history ~/.agents/skills/game_ai_branch_history_review
 cp -R game_ai_review_shared "${CODEX_HOME:-$HOME/.codex}/skills/"
 ```
 
-H5 迁移首次安装示例（目标目录尚不存在时执行）：
+**H5 项目迁移**（首次安装，目标目录尚不存在）
 
 ```bash
 mkdir -p ~/.agents/skills
@@ -88,10 +89,12 @@ cp -R game_ai_h5_project_migration_check ~/.agents/skills/gameai_h5_project_migr
 
 示例中的路径、分支、提交和版本号均须替换为实际值；具体执行以对应 `SKILL.md` 为准。
 
-### 需求转 OpenSpec
+### OpenSpec 方案与 UI 制作
+
+#### 需求转 OpenSpec
 
 ```text
-使用 $game_ai_function，把以下资料融合为 OpenSpec change：
+使用 $game_ai_openspec_apply，把以下资料融合为 OpenSpec change：
 需求：/path/to/docs/活动需求.docx
 设计：/path/to/docs/客户端设计.md
 接口：/path/to/docs/接口文档.md
@@ -100,25 +103,44 @@ cp -R game_ai_h5_project_migration_check ~/.agents/skills/gameai_h5_project_migr
 
 也可直接输入需求文字。该入口需要 OpenSpec CLI；提取 `.docx` 时需要 Python 3。
 
-### Unity UI 制作
+#### Unity UI 制作
 
 ```text
-使用 $openspec-ui-apply，为当前 OpenSpec change 制作活动界面。
+使用 $game_ai_openspec_apply，以 UIApply 模式为当前 OpenSpec change 制作活动界面。
 设计效果图路径：/path/to/design/活动主界面.png
 UI 资源路径：/path/to/ui-assets/活动主界面
 Prefab 保存路径：Assets/Res/Prefab/Activity/UIActivityWin.prefab
 Prefab 资源命名：UIActivityWin
 ```
 
-四项输入必须明确且可访问；制作和验收还需可用的 Unity Editor 或已配置的 Unity 工具。UIApply 是自定义 Skill，不会自动注册 `/opsx:ui-apply` 命令。
+四项输入必须明确：效果图和资源须可访问，Prefab 目标路径须合法、可写且与命名一致；制作和验收还需可用的 Unity Editor 或已配置的 Unity 工具。UIApply 是自定义流程，不会自动注册 `/opsx:ui-apply` 命令。
 
-### OpenSpec C# 审核
+#### Cocos Creator 和 Cocos2d-lua UI 制作
+
+使用 `$game_ai_openspec_apply` 指定已有 change，提供设计图路径、UI 资源路径，再按模块填写主产物路径和名称。以下是三个独立调用的输出字段示例。
+
+| 目标模块 | 主产物保存路径示例 | 产物名称 |
+| --- | --- | --- |
+| Cocos Creator 预制体 | `assets/activity/prefabs/ActivityPanel.prefab` | `ActivityPanel` |
+| Cocos2d-lua 代码布局 | `src/app/views/ActivityPanel.lua` | `ActivityPanel` |
+| Cocos2d-lua 使用 Studio 布局 | `cocosstudio/activity/ActivityPanel.csd` | `ActivityPanel` |
+
+Studio 项目还需从工程导出规则核对运行时布局及其加载路径。联合流程同样适用于这两个引擎。
+
+#### 从需求到 UI 制作
 
 ```text
-$openspec-ai-review target_branch=release/1.2.0 base_branch=master mode=review
+使用 $game_ai_openspec_apply，把需求转为 OpenSpec change 后继续制作 Unity UI。
+需求：/path/to/docs/活动需求.docx
+设计：/path/to/docs/客户端设计.md
+接口：/path/to/docs/接口文档.md
+设计效果图路径：/path/to/design/活动主界面.png
+UI 资源路径：/path/to/ui-assets/活动主界面
+Prefab 保存路径：Assets/Res/Prefab/Activity/UIActivityWin.prefab
+Prefab 资源命名：UIActivityWin
 ```
 
-`review` 仅执行内部取证与审核，不输出报告文件或发送消息。发布模式 `review-publish` 会将 HTML 提交到 SVN 并同步飞书，也是入口的默认模式；只需内部审核时应显式指定 `mode=review`。发布前须准备好本机配置。仅安装或讨论该 Skill 不执行发布。审核仅覆盖 C# 代码及其有效需求实现，不做资源差异或视觉布局审核。
+两个阶段复用同一 change、UI 契约与任务。只要求生成方案时不会执行 UI 制作；缺少制作输入时可先完成方案，UI 任务保留未完成。
 
 ### 固定版本综合审查
 
@@ -137,22 +159,6 @@ $openspec-ai-review target_branch=release/1.2.0 base_branch=master mode=review
 ```
 
 该入口替代此前的 `review-version-evidence` 名称。续审或维护旧报告时使用原冻结技能与工具，详见入口说明。
-
-### 分支或 MR 合入审查
-
-```text
-使用 $game_ai_merge_review，审查源分支合入目标分支引起的问题。
-仓库：/path/to/client
-源分支：develop_1.9.0
-源提交：<完整 SHA>
-合入目标分支：master
-目标基线提交：<完整 SHA>
-完整输入：/path/to/评审文档
-输出根目录：/path/to/合并审查输出
-历史已有问题不计新增；冻结入口、共享工作流及全部输入 SHA-256。
-```
-
-也可提供 MR 链接、允许使用的资料与输出根目录，由入口解析并冻结实际版本。
 
 ### 固定分支历史审查
 
@@ -180,26 +186,23 @@ $openspec-ai-review target_branch=release/1.2.0 base_branch=master mode=review
 
 ```text
 game_ai_skills/
-├── game_ai_function/                  # 需求转 OpenSpec
-├── openspec-ui-apply/                 # Unity UI 制作
-├── openspec-ai-review/                # OpenSpec C# 审核
-├── game_ai_review_version_evidence/   # 固定版本综合审查
-├── game_ai_merge_review/              # 合入问题审查
-├── game_ai_branch_history_review/     # 固定分支历史审查
-├── game_ai_review_shared/             # 两个拆分审查入口的共享依赖
-├── game_ai_h5_project_migration_check/ # H5 迁移，调用名暂沿用 gameai_ 前缀
-├── archived/                         # 早期 Skill 归档
-├── AGENTS.md                         # 团队路由规则
-├── CONTRIBUTING.md                   # 贡献与发布流程
-└── README.md
+├── game_ai_openspec_apply/              # OpenSpec 方案与 Unity、Cocos Creator、Cocos2d-lua 的 UI 制作及验收
+├── game_ai_review_version_evidence/     # 固定版本综合审查，覆盖新增与历史问题
+├── game_ai_review_branch_history/       # 固定分支历史审查，调用名为 game_ai_branch_history_review
+├── game_ai_review_shared/               # 单分支历史审查的共享依赖
+├── game_ai_h5_project_migration_check/  # H5 项目迁移与审查，调用名为 gameai_h5_project_migration_check
+├── archived/                            # 9 个归档 Skill
+├── AGENTS.md                            # 团队路由规则
+├── CONTRIBUTING.md                      # 贡献与发布流程
+└── README.md                            # Skill 索引、安装说明与调用示例
 ```
 
-## 已归档 Skills
+## 归档 Skill
 
 以下目录保留在 `archived/`，不属于当前主入口。需要复用时，先阅读对应说明并核对依赖及适用范围，再单独安装。
 
 | Skill | 原用途 |
-|---|---|
+| --- | --- |
 | [gameai_analyze_requirement](archived/gameai_analyze_requirement/SKILL.md) | 游戏需求分析与任务拆解 |
 | [gameai_testcase_generator](archived/gameai_testcase_generator/SKILL.md) | 测试用例和开发自测清单 |
 | [gameai_analyze_activity](archived/gameai_analyze_activity/SKILL.md) | 捕鱼活动需求分析 |

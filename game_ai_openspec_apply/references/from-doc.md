@@ -1,11 +1,4 @@
----
-name: game_ai_function
-description: 输入一段需求文字，或输入一个或多个需求/设计/接口文档，自动归一化输入→分类分析→融合生成 OpenSpec change（proposal/design/tasks/specs），最后进入 explore 讨论。
-license: MIT
-metadata:
-  author: pimingzhen
-  version: "2.1"
----
+# 需求转 OpenSpec
 
 输入一段需求文字，或输入一个或多个文档，自动完成：
 
@@ -46,7 +39,7 @@ metadata:
 
 ## 输入
 
-用户通过 `/opsx:from-doc` 提供需求文字或文档路径，支持以下格式：
+统一入口为 `$game_ai_openspec_apply`。以下 `/opsx:from-doc` 写法仅供已有项目命令映射使用；安装 Skill 不会自动注册该命令。支持以下格式：
 
 | 格式 | 说明 |
 |---|---|
@@ -67,7 +60,7 @@ metadata:
 
 **支持的文件格式：** `.docx`、`.md`、`.txt`。`-d` / `--design` 和 `-i` / `--interface` 仍只接受文档路径。
 
-如果未提供任何输入，先使用 **AskUserQuestion tool** 询问：
+如果未提供任何输入，先使用 当前环境可用的提问工具（无工具时直接提问） 询问：
 1. "请粘贴需求文字，或提供需求文档路径"
 2. 获取有效需求后，再按需询问："请提供设计文档路径（可跳过）"
 3. "请提供接口文档路径（可跳过）"
@@ -140,7 +133,7 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 
 ### Phase 2: 融合需求分析
 
-1. **对需求输入** → 15 维度深度分析（同 gameai_analyze_requirement）
+1. **对需求输入** → 分析功能概述、玩法流程、状态流转、客户端任务、服务端任务、配置表、UI/资源、接口协议、数据存储、埋点、异常情况、风险、开发顺序、自测重点和待确认问题这 15 个维度；不适用项注明原因，无需安装归档分析 Skill。
 
 2. **对设计文档** → 提取并整理：
    - 技术架构/系统分层
@@ -167,15 +160,16 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 | get_signin_info | GET | activity_id | consecutive_days, ... | 拉取签到状态 |
 ```
 
-将融合分析写入：`/tmp/openspec_merged_analysis.md`
+将融合分析写入本次 change 的 `analysis.md`（创建 change 前可使用本轮独立临时文件），避免多个变更共用临时报告。
 
 ---
 
 ### Phase 3: 创建 OpenSpec Change
 
-1. **确定 change name**（优先从需求标题提取 kebab-case；文字需求没有标题时，从首句或核心功能提取，最后由用户确认）
+1. **确定 change name**（优先复用用户已指定或上下文明确的名称；否则从需求标题或核心功能提取 kebab-case，仅存在实质歧义时询问）
 
-2. **创建 change 目录**
+2. **创建或续用 change 目录**
+   已有同名变更时，核对范围与已有 artifacts；明确续做则复用，不覆盖现有内容，不另建重复变更。范围冲突且无法判断时询问。新变更执行：
    ```bash
    openspec new change "<name>"
    ```
@@ -212,6 +206,8 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
    - Request/Response schema
    - 错误码表
 
+涉及 Unity UGUI、Cocos Creator 或 Cocos2d-lua 界面时，按统一入口的“方案到 UI 的交接”同步页面状态、绑定契约和 UIApply 任务；只做方案时不执行界面制作。
+
 5. **验证完成**
    ```bash
    openspec status --change "<name>"
@@ -227,7 +223,7 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
    - 设计方案是否有缺口？
    - 接口定义是否完整？
    - 与需求是否一致？
-4. 询问下一步
+4. 仅方案请求在此交付；用户已要求接着制作 UI 时，继续统一入口的 UIApply 流程，不重复询问是否执行。
 
 ---
 
@@ -249,7 +245,7 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 ✅ 需求分析: 15/15 维度
 ✅ 设计提取: 系统分层 + 5 个关键决策
 ✅ 接口提取: 4 个 API + 3 个数据结构 + 8 个错误码
-融合报告: /tmp/openspec_merged_analysis.md
+融合报告: openspec/changes/daily-signin-v2/analysis.md
 
 ## 📋 Phase 3: OpenSpec 方案
 
@@ -293,11 +289,11 @@ for p in tree.iter('{http://schemas.openxmlformats.org/wordprocessingml/2006/mai
 - **需求文件与额外裸文字同时出现时必须确认主需求**，不得静默合并
 - **保留需求文字中的换行和 Markdown 语义**，不要按空格拆分或当作额外参数
 - **超短或语义不完整的文字不得自行补全**，将缺失信息列入待确认问题
-- **Phase 1→4 不可跳过**
+- **方案模式执行 Phase 1→4**；已有变更的 UI 制作模式直接读取现有 artifacts，不重跑需求方案生成
 - **跨文档一致性检查**：如果需求、设计、接口之间存在矛盾，必须在"待确认问题"中高亮标记
 - **信息来源标注**：artifact 中融合多文档内容时，不要混淆来源
 - **文档提取失败**：提示文件格式问题，不影响其他已成功提取的文档
-- **change name 已存在**：询问覆盖/新名称/继续已有
-- **openspec CLI 不可用**：手动创建文件作为降级
+- **change name 已存在**：核对并复用明确的已有变更；不得静默覆盖，范围冲突时询问
+- **openspec CLI 不可用**：按目标项目已有 schema/模板准备方案草稿并标记未做 CLI 验证；没有可核实模板时只交付分析与缺口，不伪造已通过的 OpenSpec change
 - **分析不明确处列为待确认**，不猜测
-- 使用 **AskUserQuestion tool** 让用户做关键决策
+- 使用 当前环境可用的提问工具（无工具时直接提问） 让用户做关键决策

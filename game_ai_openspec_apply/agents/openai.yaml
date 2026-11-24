@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenSpec 方案与游戏 UI 制作"
+  short_description: "生成游戏功能的 OpenSpec 方案，为 Unity、Cocos Creator 和 Cocos2d-lua 制作界面"
+  default_prompt: "使用 $game_ai_openspec_apply，根据我的需求生成 OpenSpec 方案。"

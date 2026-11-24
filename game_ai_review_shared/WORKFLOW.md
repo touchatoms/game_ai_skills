@@ -30,6 +30,8 @@
 
 ## 2. 先建覆盖账本，再读实现
 
+输入含 OpenSpec 规范或 change 时，先按[版本需求核查](references/review-protocol.md#openspec-版本需求核查)确认本版有效条款，再在固定目标实现中逐项取证。
+
 阅读 [references/review-protocol.md](references/review-protocol.md)。先从原始规范建立目录级条款索引及归属，即可启动分区；细化随核证推进，收口时逐项判定。条款索引不能只来自关键词命中或已有findings，字段见output-contract的requirements_coverage。预期保留有效原文的触发、时间点、量词及例外，不按现有实现改写；发现同时从规范追实现、从实现查不变量与状态转换，具体按coverage-completion执行。从实际变更和需求建立两条相互校验的覆盖轴：
 
 1. 功能流程：入口 → 初始化 → 操作 → 请求/通知 → 数据变更 → 刷新/退出；列出独立入口和复用流程。
