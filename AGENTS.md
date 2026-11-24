@@ -9,7 +9,7 @@
 
 当用户要求“把需求转成 OpenSpec”“生成 proposal / design / specs”“从文档生成技术方案”时，优先使用：
 
-- gameai_openspec_from_doc
+- game_ai_function
 
 当用户要求“需求分析”“分析活动文档”“拆解需求”时，优先使用：
 
